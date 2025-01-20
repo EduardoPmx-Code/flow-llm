@@ -1,0 +1,48 @@
+version: '3.9'
+
+
+services:
+  # openWebUI:
+  #   image: ghcr.io/open-webui/open-webui:main
+  #   #restart: always
+  #   ports:
+  #     - "3001:8080"
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   volumes:
+  #     - open-webui-local:/app/backend/data
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    networks:
+      - mynetwork
+    volumes:
+      - ollama-local:/root/.ollama
+    container_name: ollama
+
+  client-gateway:
+    build: ./
+    ports:
+      - "4000:4000"
+    networks:
+      - mynetwork
+    volumes:
+      - ./src:/usr/src/app/src
+    command: npm run start:dev
+    environment:
+      - PORT=4000
+      - OLLAMA_BASEURL=http://ollama:11434/api/
+      - OLLAMA_MODEL=llama3
+    depends_on:
+      - ollama
+
+volumes:
+  ollama-local:
+  #open-webui-local:
+
+networks:
+  mynetwork:
+    driver: bridge
+
