@@ -6,9 +6,11 @@ import { generateObject, generateText } from 'ai';
 import { ollama, createOllama } from 'ollama-ai-provider';
 import { z } from 'zod';
 import { LayersIaService } from 'src/layers-ia/layers-ia.service';
+import { IaProvider } from 'src/providers/provider-is';
 
 @Injectable()
 export class SocketIaService {
+  private Model: any;
   systemRol = `Tu rol es el de asistente, y debes realizar las siguientes tareas:
 
         1. **Identificar el Idioma**:
@@ -43,12 +45,16 @@ export class SocketIaService {
            - Asegúrate de que todas tus respuestas estén en el idioma solicitado por el cliente.
 
         Ten en cuenta estos puntos al analizar el prompt y generar la respuesta adecuada.`;
-  constructor(private layerIaService: LayersIaService) {}
+  constructor(private layerIaService: LayersIaService) {
+    const llamaServer = new IaProvider();
+    llamaServer.getOllamaClient();
+    this.Model = llamaServer.getModel();
+  }
   async generateResponse(prompt: string): Promise<any> {
     try {
-      console.log(prompt);
-      const response = await await generateObject({
-        model: ollama('llama3:8b'),
+      const model = this.Model;
+      const response = await generateObject({
+        model: model,
         system: this.systemRol,
         temperature: 0,
         maxTokens: 50,
@@ -70,7 +76,8 @@ export class SocketIaService {
         return await this.layerIaService.handlerProducts(prompt);
       console.log('capa para buscar productos');
       return response.object.action;
-    } catch (error) { // ,,,,,,
+    } catch (error) {
+      // ,,,,,,
       console.error('Error generating response:', error);
       return 'Sorry, something went wrong.';
     }

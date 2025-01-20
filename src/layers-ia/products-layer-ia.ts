@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { generateObject, generateText } from 'ai';
 import { ollama, createOllama } from 'ollama-ai-provider';
+import { IaProvider } from 'src/providers/provider-is';
 import { z } from 'zod';
 @Injectable()
 export class ProductsLayerIaService {
+  private Model: any;
   private systemHandler: string;
   private systemRolProducts: string;
   db_products = [
@@ -89,6 +91,9 @@ export class ProductsLayerIaService {
     },
   ];
   constructor() {
+    const llamaServer = new IaProvider();
+    llamaServer.getOllamaClient();
+    this.Model = llamaServer.getModel();
     this.systemHandler = `Tu rol es asistir al cliente con sus solicitudes de búsqueda en la base de datos.
 
 Debes seguir estas reglas para interpretar el prompt del cliente:
@@ -159,7 +164,7 @@ Debes seguir estas reglas para interpretar el prompt del cliente:
   async handlerRequestproducts(prompt: string): Promise<any> {
     try {
       const response = await await generateObject({
-        model: ollama('llama3:8b'),
+        model: this.Model,
         system: this.systemHandler,
         temperature: 0,
         maxTokens: 400,
@@ -225,9 +230,8 @@ Debes seguir estas reglas para interpretar el prompt del cliente:
 
   async generateProductsResponse(prompt: string): Promise<any> {
     try {
-      console.log(prompt);
       const response = await generateObject({
-        model: ollama('llama3:8b'),
+        model: this.Model,
         system: this.systemRolProducts,
         temperature: 0,
         maxTokens: 200,
